@@ -2,7 +2,7 @@ import os, json, time, logging, requests, textwrap
 from bs4 import BeautifulSoup
 from pptx import Presentation
 from pptx.util import Inches, Pt
-import openai
+# openai import removed for free summarization
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,24 @@ def web_search(query, engine_id, api_key, limit=10):
 # ==============================================================
 
 def summarize_text(text, words=250):
+    """Resumir texto usando Sumy (LSA)."""
+    # Ensure NLTK punkt data
+    try:
+        import nltk
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt')
+    # Parse text and summarize
+    from sumy.parsers.plaintext import PlaintextParser
+    from sumy.nlp.tokenizers import Tokenizer
+    from sumy.summarizers.lsa import LsaSummarizer
+
+    parser = PlaintextParser.from_string(text, Tokenizer("spanish"))
+    summarizer = LsaSummarizer()
+    # sumy expects sentences count. Estimate
+    sent_count = max(1, int(words / 100))
+    summary_sentences = summarizer(parser.document, sent_count)
+    return " ".join(str(s) for s in summary_sentences)
     """Función de resumen. Cambia a la LLM que prefieras."""
     openai.api_key = os.getenv("OPENAI_API_KEY")
     response = openai.ChatCompletion.create(
